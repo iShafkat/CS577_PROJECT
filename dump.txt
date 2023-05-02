@@ -1,0 +1,36 @@
+# Import necessary libraries
+import textattack
+from textattack.datasets import HuggingFaceDataset
+from textattack.models.wrappers import ModelWrapper
+from textattack.attack_recipes import TextFoolerJin2019
+from transformers import AutoTokenizer
+
+# Define the sentiment analysis model to be attacked
+tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+#model = ModelWrapper("bert-base-uncased", tokenizer)
+model = ModelWrapper("textattack/bert-base-uncased-imdb")
+
+# Load the dataset to be used for the attack
+dataset = HuggingFaceDataset("imdb", split="test")
+
+# Select a sample from the dataset to be attacked
+text = dataset[0]["text"]
+label = dataset[0]["label"]
+
+# Define the attack recipe to be used
+attack = TextFoolerJin2019.build(model)
+
+# Configure the attack with the desired parameters
+attack_config = textattack.AttackConfig(num_examples=1, use_cache=True)
+
+# Generate the adversarial example
+adv_text = attack.attack(text, label, attack_config)
+
+# Evaluate the model on the original and adversarial examples
+original_result = model.predict(text)
+adversarial_result = model.predict(adv_text)
+
+print("Original text: %s", text)
+print("Original prediction: %s", {original_result})
+print("Adversarial text: %s",{adv_text})
+print("Adversarial prediction: %s", {adversarial_result})
